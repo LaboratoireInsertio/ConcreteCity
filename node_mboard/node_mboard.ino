@@ -20,6 +20,7 @@ ModemStatusResponse msr = ModemStatusResponse();
 
 
 const int buttonPin = A0;   // the number of the pushbutton pin
+const int sensorPin = A4;
 const int ledPin =  5;      // the number of the LED pin
 
 //Zigbee Transmit Request API packet
@@ -32,6 +33,9 @@ uint8_t payload[] = {
 int lastSend = 0;
 
 int dataIn = 0;
+
+// variable for slow transitions
+float outputValue = 0.0;
 
 
 void setup() {
@@ -62,9 +66,48 @@ void setup() {
 
 // continuously reads packets, looking for ZB Receive or Modem Status
 void loop() {
-  // read the input on analog pin 4:
-  //int sensorValue = analogRead(A4)/4;
   int buttonValue = digitalRead(buttonPin);
+  int sensorValue = analogRead(sensorPin) / 4;
+
+
+
+
+
+
+  int desiredValue = 50;
+
+  // if someone is detected
+  if (sensorValue > 120) {
+    // set the output value to the maximum
+    desiredValue = 255;
+
+    // smoothly transition towards the max value
+    float dif = desiredValue - outputValue;
+    if (abs(dif) > 1.0) {
+      outputValue = outputValue + dif / 8.0;
+    }
+  } else {
+    // set the output value to the maximum
+    desiredValue = 50;
+
+    // smoothly transition towards the max value
+    float dif = desiredValue - outputValue;
+    if (abs(dif) > 1.0) {
+      outputValue = outputValue + dif / 64.0;
+    }
+  }
+
+  // change the analog out value:
+  analogWrite(ledPin, outputValue);
+  // print out the value you read:
+  Serial.println(outputValue);
+  delay(30);        // delay in between reads for stability
+
+
+
+
+
+
 
   //if (abs(lastSend - sensorValue) > 30) {
   //  sendPacket(XBeeAddress64(0x00000000, 0x00000000), sensorValue);
